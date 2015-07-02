@@ -1,0 +1,77 @@
+<!doctype html>
+<title>Stupid App</title>
+<head>
+  <link href="app.css" rel="stylesheet">
+</head>
+<body>
+  <svg id="graph" width="200px" height="200px"></svg>
+  <select id="select-wave" onchange="document.updatePage()">
+    <option value="sin">sin</option>
+    <option value="cos">cos</option>
+  </select>
+  <input id="num-points" onkeyup="document.updatePage()" value="10">
+  <script>
+    (function() {
+      var FLASK_URL = 'http://127.0.0.1:5000';
+
+      function isNumber(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+      }
+
+      // from http://stackoverflow.com/questions/8567114/how-to-make-an-ajax-call-without-jquery/18324384#18324384
+      function callAjax(url, callback){
+          var xmlhttp;
+          // compatible with IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp = new XMLHttpRequest();
+          xmlhttp.onreadystatechange = function(){
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                  callback(xmlhttp.responseText);
+              }
+          }
+          xmlhttp.open("GET", url, true);
+          xmlhttp.send();
+      }
+
+      // attach to document so HTML can access it
+      document.updatePage = function() {
+        var wave = document.getElementById("select-wave").value;
+        var numPoints = document.getElementById("num-points").value;
+        // sanitize input
+        if (!isNumber(numPoints) || numPoints <= 0) { numPoints = 0; }
+
+        var url = FLASK_URL + '/graph/' + wave + '/points/' + numPoints;
+        // make an ajax call and pass the result to renderPoints
+        callAjax(url, renderPoints);
+      }
+
+      renderPoints = function(points) {
+        var svg = document.getElementById("graph");
+        // remove previous elements from SVG
+        while (svg.firstChild) {
+          svg.removeChild(svg.firstChild);
+        }
+
+        // parse json into an array of points
+        points = JSON.parse(points);
+
+        for (var i = 0; i < points.length; i++) {
+          var point = points[i];
+
+          // create the right SVG circle
+          var circle =
+            document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+          circle.setAttributeNS(null, "cx", 5 + 190 * point.x / 6.28);
+          circle.setAttributeNS(null, "cy", 100 - point.y * 90);
+          circle.setAttributeNS(null, "r", 2);
+          circle.setAttributeNS(null, "stroke", "black");
+          circle.setAttributeNS(null, "fill", "red");
+
+          // and add it to the SVG
+          svg.appendChild(circle);
+        }
+      }
+
+      document.updatePage();
+    })();
+  </script>
+</body>
