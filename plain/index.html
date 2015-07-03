@@ -34,43 +34,55 @@
 
       // attach to document so HTML can access it
       document.updatePage = function() {
+        // to update the page, first we read the values of the inputs
         var wave = document.getElementById("select-wave").value;
         var numPoints = document.getElementById("num-points").value;
-        // sanitize input
+
+        // one of the inputs is free-form, so we should sanitize its value
         if (!isNumber(numPoints) || numPoints <= 0) { numPoints = 0; }
 
+        // use the input values to create a REST url
         var url = FLASK_URL + '/graph/' + wave + '/points/' + numPoints;
+
         // make an ajax call and pass the result to renderPoints
         callAjax(url, renderPoints);
       }
 
+      // takes the result of the ajax call and creates
+      // a plot in the svg#graph
       renderPoints = function(points) {
+        // get the svg element
         var svg = document.getElementById("graph");
-        // remove previous elements from SVG
+
+        // clear its children
         while (svg.firstChild) {
           svg.removeChild(svg.firstChild);
         }
 
-        // parse json into an array of points
+        // parse serialized json blob into an array of points
         points = JSON.parse(points);
 
+        // and then loop over the points, creating a circle for each
         for (var i = 0; i < points.length; i++) {
           var point = points[i];
 
           // create the right SVG circle
           var circle =
             document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+
+          // rescale to fit in 200x200 svg
           circle.setAttributeNS(null, "cx", 5 + 190 * point.x / 6.28);
           circle.setAttributeNS(null, "cy", 100 - point.y * 90);
           circle.setAttributeNS(null, "r", 2);
           circle.setAttributeNS(null, "stroke", "black");
           circle.setAttributeNS(null, "fill", "red");
 
-          // and add it to the SVG
+          // and add the circle to the SVG
           svg.appendChild(circle);
         }
       }
 
+      // make an initial call to update page to populate the initial graph
       document.updatePage();
     })();
   </script>
